@@ -1,8 +1,9 @@
 import os
 
-from flask import Flask
+from flask import Flask, render_template, request
 
-from python_db import PostgresStorage, MongoStorage, RedisStorage
+from db_interactions import PostgresStorage, MongoStorage, RedisStorage
+from recsys_model import SVDRecsys
 
 # если сначала работало, а потом поломалось - можно удалить контейнеры
 # sudo docker rm $(sudo docker ps -a -q)
@@ -20,11 +21,23 @@ redis_storage = RedisStorage()
 app = Flask(__name__)
 bind_port = os.environ['BIND_PORT']
 
+recsys = SVDRecsys(postgres_storage, mongo_storage, redis_storage)
+print("Модель обучена, данные сохранены")
 
 @app.route('/')
 def hello():
     redis_storage.storage.incr('hits')
-    return 'Hello World! I have been seen {} times.'.format(redis_storage.storage.get('hits'))
+    return render_template('index.html')
+
+
+@app.route('/recs')
+def recs():
+    personal_recs = recsys.get_recommendations(
+        request.args.get("user_id", type=int, default=100),
+        request.args.get("top", type=int, default=50)
+    )
+    return render_template('rec_page.html', recs=personal_recs)
+
 
 if __name__=='__main__':
     print("Прокинули порт {}, Redis {}".format(bind_port, redis_storage.storage))

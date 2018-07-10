@@ -14,15 +14,23 @@ ENV APP_POSTGRES_PORT 5432
 
 EXPOSE $BIND_PORT
 
-RUN apk update \
+# Зависимости для numpy
+# ---------------------
+
+
+RUN echo "http://dl-8.alpinelinux.org/alpine/edge/community" >> /etc/apk/repositories
+
+RUN apk --no-cache --update-cache add gcc gfortran python python-dev py-pip build-base wget freetype-dev libpng-dev openblas-dev\
   && apk add --virtual build-deps gcc python3-dev musl-dev \
   && apk add postgresql-dev
 
-COPY ./requirements.txt /home/requirements.txt
-COPY ./app.py /home/app.py
-COPY ./python_db.py /home/python_db.py
-RUN pip install -r /home/requirements.txt
+RUN ln -s /usr/include/locale.h /usr/include/xlocale.h
+
+# ----------------------
+
+COPY ./* /home/
+COPY ./templates/* /home/templates/
+RUN pip install --no-cache -r /home/requirements.txt
 
 
 CMD [ "python", "/home/app.py" ]
-# CMD [ "python", "/home/python_db.py" ]
