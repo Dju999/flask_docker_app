@@ -1,0 +1,18 @@
+version: '2'
+services:
+  postgres_host:
+    image: postgres:10-alpine
+    restart: always
+    ports: ["5432:5432"]
+  postgres-client:
+    build:
+      context: .
+    depends_on:
+      - postgres_host
+    tty: true
+    environment:
+      - APP_POSTGRES_HOST=postgres_host
+      - APP_POSTGRES_PORT=5432
+    volumes:
+      - /tmp/data:/data
+    links: [postgres_host]
